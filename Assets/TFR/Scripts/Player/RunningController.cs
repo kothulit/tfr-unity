@@ -36,25 +36,22 @@ namespace TFR.Player
             Vector3 right = cameraTransform.right;
             forward.y = 0f;
             right.y = 0f;
-            forward.Normalize();
-            right.Normalize();
-
-            Vector3 direction = forward * move.y + right * move.x;
-            if (direction.sqrMagnitude > 1f)
-                direction.Normalize();
-
-            if (direction.sqrMagnitude > 0.001f)
+            if (forward.sqrMagnitude > 0.001f)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
+                forward.Normalize();
+                right.Normalize();
+                Quaternion targetRotation = Quaternion.LookRotation(forward, Vector3.up);
                 transform.rotation = Quaternion.Slerp(
                     transform.rotation, targetRotation, turnSpeed * deltaTime);
             }
+            Vector3 direction = forward * move.y + right * move.x;
+            if (direction.sqrMagnitude > 1f)
+                direction.Normalize();
 
             if (controller.isGrounded && verticalVelocity < 0f)
                 verticalVelocity = -2f;
             else
                 verticalVelocity += Physics.gravity.y * deltaTime;
-
             Vector3 velocity = direction * speed;
             velocity.y = verticalVelocity;
             controller.Move(velocity * deltaTime);
