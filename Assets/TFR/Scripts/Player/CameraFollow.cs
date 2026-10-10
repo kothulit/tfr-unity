@@ -13,7 +13,7 @@ namespace TFR
             Vector3 desired = target.position + target.rotation * offset;
             transform.position = Vector3.Lerp(
                 transform.position, desired, smooth * Time.deltaTime);
-            transform.LookAt(target.position + Vector3.up * 1.5f);
+            transform.LookAt(target.position + Vector3.up * 0.5f);
         }
     }
 }
