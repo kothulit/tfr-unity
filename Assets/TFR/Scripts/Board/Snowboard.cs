@@ -1,5 +1,5 @@
 using UnityEngine;
-namespace TFR
+namespace TFR.Board
 {
     public class Snowboard : MonoBehaviour
     {
@@ -14,6 +14,8 @@ namespace TFR
                 return;
             IsEquipped = false;
             IsTaken = true;
+            if (solidCollider != null)
+                solidCollider.enabled = true;
             transform.SetParent(mount, false);
             transform.localScale = Vector3.one;
             transform.localPosition = new Vector3(0f, 0f, 0f);
@@ -36,6 +38,13 @@ namespace TFR
             transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
         }
 
-        
+        public void Drop(Vector3 position, Quaternion rotation)
+        {
+            if (!IsTaken)
+                return;
+            IsTaken = false;
+            transform.SetParent(null);
+            transform.SetPositionAndRotation(position, rotation);
+        }
     }
 }

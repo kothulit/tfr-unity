@@ -1,30 +1,22 @@
 using UnityEngine;
 using VContainer.Unity;
+using TFR.Input;
 
 namespace TFR
 {
     public class GamePresenter : IStartable
     {
-        readonly HelloWorldService helloWorldService;
-        readonly HelloScreen helloScreen;
-
-        readonly DemoBoardCreator demoBoardCreator;
-        readonly DemoBoard demoBoard;
+        private readonly IGameplayInput gameplayInput;
         public GamePresenter(
-            HelloWorldService helloWorldService,
-            HelloScreen helloScreen,
-            DemoBoardCreator demoBoardCreator
+            IGameplayInput gameplayInput
             )
         {
-            this.helloWorldService = helloWorldService;
-            this.helloScreen = helloScreen;
-            this.demoBoardCreator = demoBoardCreator;
+            this.gameplayInput = gameplayInput;
         }
 
         public void Start()
         {
-            helloScreen.HelloButton.onClick.AddListener( ()=> helloWorldService.Hello());
-            demoBoardCreator.CreateGameObject();
+            gameplayInput.GameplayEnabled = true;
         }
     }
 }
