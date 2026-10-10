@@ -798,12 +798,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 330585543}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3453e87e10974c747960aac0d05efe30, type: 3}
+  m_Script: {fileID: 11500000, guid: f072cbd7878382f4ba50e8053898084d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TFR.CameraFollow
+  m_EditorClassIdentifier: Assembly-CSharp::TFR.Camera.CameraFollowController
   target: {fileID: 804336340}
-  offset: {x: 0, y: 2, z: -4}
-  smooth: 8
+  offset: {x: 0, y: 2, z: -3}
+  followSmooth: 8
+  lookSensitivity: 0.15
+  minPitch: -30
+  maxPitch: 60
 --- !u!1 &336443898
 GameObject:
   m_ObjectHideFlags: 0
@@ -1225,7 +1228,7 @@ MonoBehaviour:
   walkSpeed: 4
   runSpeed: 8
   turnSpeed: 8
-  cameraTransform: {fileID: 330585546}
+  cameraFollow: {fileID: 330585548}
 --- !u!114 &804336343
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1240,7 +1243,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TFR.Player.MotionController
   snowboard: {fileID: 606046836}
   playerHand: {fileID: 209875853}
-  playerFoot: {fileID: 1759974732}
+  playerFoot: {fileID: 133056358}
   interactDistance: 2
 --- !u!1 &832575517
 GameObject:
@@ -1873,11 +1876,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 606046836}
   m_SourcePrefab: {fileID: 100100000, guid: 02fb3b8893bda5f488b14120ff3c0cbc, type: 3}
---- !u!4 &1759974732 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -5143821378416550934, guid: 3ec437b5f2cce1647bdf0756f35b1532, type: 3}
-  m_PrefabInstance: {fileID: 122716355}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1841222470
 GameObject:
   m_ObjectHideFlags: 0

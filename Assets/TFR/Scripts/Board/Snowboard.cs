@@ -34,8 +34,8 @@ namespace TFR.Board
                 solidCollider.enabled = false;
             transform.SetParent(mount, false);
             transform.localScale = Vector3.one;
-            transform.localPosition = new Vector3(0.14f, -0.1f, 0f);
-            transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            transform.localPosition = new Vector3(0f, -0.03f, 0f);
+            transform.localRotation = Quaternion.Euler(-90f, 0f, 90f);
         }
 
         public void Drop(Vector3 position, Quaternion rotation)

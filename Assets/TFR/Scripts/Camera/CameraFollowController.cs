@@ -20,6 +20,8 @@ namespace TFR.Camera
         float yaw;
         float pitch = 15f;
 
+        public float Yaw => yaw;
+
         [Inject]
         public void Construct(IGameplayInput input)
         {
@@ -39,12 +41,17 @@ namespace TFR.Camera
 
             Vector2 look = input.LookDelta;
             yaw += look.x * lookSensitivity;
-            pitch = Mathf.Clamp(pitch - look.y * lookSensitivity, minPitch, maxPitch);
+            // Наклон, при котором камера оказывается над головой и LookAt разворачивается на 180°.
+            float overheadPitch = Mathf.Atan2(-offset.z, offset.y) * Mathf.Rad2Deg - 10f;
+            pitch = Mathf.Clamp(pitch - look.y * lookSensitivity, minPitch, Mathf.Min(maxPitch, overheadPitch));
 
-            Quaternion orbit = Quaternion.Euler(pitch, yaw, 0f);
+            Quaternion orbit = Quaternion.AngleAxis(yaw, Vector3.up) * Quaternion.AngleAxis(pitch, Vector3.right);
             Vector3 desired = target.position + orbit * offset;
             transform.position = Vector3.Lerp(transform.position, desired, followSmooth * Time.deltaTime);
-            transform.LookAt(target.position + Vector3.up * 0.5f);
+
+            Vector3 toTarget = target.position + Vector3.up * 0.5f - transform.position;
+            if (toTarget.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.LookRotation(toTarget, orbit * Vector3.up);
         }
     }
 }

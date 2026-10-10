@@ -1,3 +1,4 @@
+using TFR.Camera;
 using TFR.Input;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace TFR.Player
         [SerializeField] float walkSpeed = 4f;
         [SerializeField] float runSpeed = 8f;
         [SerializeField] float turnSpeed = 12f;
-        [SerializeField] Transform cameraTransform;
+        [SerializeField] CameraFollowController cameraFollow;
 
         CharacterController controller;
         IGameplayInput input;
@@ -32,19 +33,13 @@ namespace TFR.Player
             Vector2 move = input.Move;
             float speed = input.SprintHeld ? runSpeed : walkSpeed;
 
-            Vector3 forward = cameraTransform.forward;
-            Vector3 right = cameraTransform.right;
-            forward.y = 0f;
-            right.y = 0f;
-            if (forward.sqrMagnitude > 0.001f)
-            {
-                forward.Normalize();
-                right.Normalize();
-                Quaternion targetRotation = Quaternion.LookRotation(forward, Vector3.up);
-                transform.rotation = Quaternion.Slerp(
-                    transform.rotation, targetRotation, turnSpeed * deltaTime);
-            }
+            Quaternion planar = Quaternion.Euler(0f, cameraFollow.Yaw, 0f);
+            Vector3 forward = planar * Vector3.forward;
+            Vector3 right = planar * Vector3.right;
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation, planar, turnSpeed * deltaTime);
             Vector3 direction = forward * move.y + right * move.x;
+
             if (direction.sqrMagnitude > 1f)
                 direction.Normalize();
 
