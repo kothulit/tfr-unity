@@ -15,6 +15,7 @@ namespace TFR.Player
 
         IGameplayInput input;
         float weightOffset;
+        WeightController weight;
 
         CharacterController characterController;
         CapsuleCollider playerCapsule;
@@ -45,9 +46,13 @@ namespace TFR.Player
         float standingCapsuleHeight;
         Vector3 standingCapsuleCenter;
 
-        public void Construct(IGameplayInput gameplayInput)
+        [SerializeField] UprightAssistSettings uprightSettings = new();
+        UprightAssist uprightAssist;
+
+        public void Construct(IGameplayInput gameplayInput, WeightController weightController)
         {
             input = gameplayInput;
+            weight = weightController;
         }
 
         void Awake()
@@ -55,6 +60,7 @@ namespace TFR.Player
             characterController = GetComponent<CharacterController>();
             playerCapsule = GetComponent<CapsuleCollider>();
             playerBody = GetComponent<Rigidbody>();
+            uprightAssist = new UprightAssist(playerBody, uprightSettings);
 
             // В сцене капсула и динамическое тело могут быть включены вместе с CharacterController.
             // До встёгивания персонажа двигает только контроллер бега.
@@ -87,11 +93,12 @@ namespace TFR.Player
                 boardCollider.enabled = false;
 
             SetPlayerPhysics(true);
+            uprightAssist.Enabled = true;
             riding = true;
 
             CreateBoardPhysics();
 
-            weightOffset = 0f;
+            weight.Reset();
         }
 
         /// <summary>
@@ -108,7 +115,11 @@ namespace TFR.Player
 
             SetPlayerPhysics(false);
 
-            weightOffset = 0f;
+            uprightAssist.Enabled = false;
+            StandUpright();
+
+            weight.Reset();
+
             if (playerBody != null)
                 playerBody.ResetCenterOfMass();
 
@@ -122,12 +133,21 @@ namespace TFR.Player
 
         public void Tick(float deltaTime)
         {
+            if (!riding)
+                return;
+            // Нос слева, хвост справа: стик вправо — вес к хвосту. Стик вперёд — на носки.
+            Vector2 move = input.Move;
+            weight.Tick(new Vector2(-move.x, move.y), deltaTime);
+            boardModel?.ApplyWeight(weight.NoseTail, weight.ToeHeel);
         }
 
         void FixedUpdate()
         {
             if (riding && groundContact != null)
                 groundContact.FixedTick();
+
+            if (riding)
+                uprightAssist.FixedTick();
         }
 
         /// <summary>
@@ -173,6 +193,18 @@ namespace TFR.Player
                 Destroy(boardPhysicsObject);
             boardPhysicsObject = null;
             boardModel = null;
+        }
+
+        /// <summary>
+        /// CharacterController не выпрямляет наклон, поэтому перед бегом оставляем только поворот вокруг вертикали.
+        /// </summary>
+        void StandUpright()
+        {
+            Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+            if (forward.sqrMagnitude < 1e-4f)
+                forward = Vector3.ProjectOnPlane(transform.up, Vector3.up);
+            if (forward.sqrMagnitude > 1e-4f)
+                transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
         }
     }
 }

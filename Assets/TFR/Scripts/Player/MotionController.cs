@@ -22,13 +22,13 @@ namespace TFR.Player
         RidingController riding;
 
         [Inject]
-        public void Construct(IGameplayInput input)
+        public void Construct(IGameplayInput input, WeightController weight)
         {
             this.input = input;
             running = GetComponent<RunningController>();
             riding = GetComponent<RidingController>();
             running.Construct(input);
-            riding.Construct(input);
+            riding.Construct(input, weight);
         }
 
         void Start()
