@@ -12,13 +12,16 @@ namespace TFR.Board
         {
             if (IsTaken)
                 return;
+            Rigidbody boardBody = GetComponent<Rigidbody>();
+            if (boardBody != null)
+                Destroy(boardBody);
             IsEquipped = false;
             IsTaken = true;
             if (solidCollider != null)
                 solidCollider.enabled = true;
             transform.SetParent(mount, false);
             transform.localScale = Vector3.one;
-            transform.localPosition = new Vector3(0f, 0f, 0f);
+            transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.Euler(0f, 90f, 90f);
         }
 
@@ -45,6 +48,8 @@ namespace TFR.Board
             IsTaken = false;
             transform.SetParent(null);
             transform.SetPositionAndRotation(position, rotation);
+            if (GetComponent<Rigidbody>() == null)
+                gameObject.AddComponent<Rigidbody>();
         }
     }
 }

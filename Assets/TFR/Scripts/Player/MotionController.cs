@@ -28,6 +28,7 @@ namespace TFR.Player
             running = GetComponent<RunningController>();
             riding = GetComponent<RidingController>();
             running.Construct(input);
+            riding.Construct(input);
         }
 
         void Start()
@@ -84,7 +85,9 @@ namespace TFR.Player
             if (!player.TryTakeBoard())
                 return;
 
+            riding.End();
             snowboard.Take(playerHand);
+            UseRunning();
         }
 
         void Mount()
@@ -108,6 +111,7 @@ namespace TFR.Player
                 return;
 
             snowboard.Equip(playerFoot);
+            riding.Begin(snowboard);
             UseRiding();
         }
     }

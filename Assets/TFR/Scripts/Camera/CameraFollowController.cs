@@ -51,7 +51,8 @@ namespace TFR.Camera
 
             Vector3 toTarget = target.position + Vector3.up * 0.5f - transform.position;
             if (toTarget.sqrMagnitude > 0.0001f)
-                transform.rotation = Quaternion.LookRotation(toTarget, orbit * Vector3.up);
+                transform.rotation = Quaternion.LookRotation(toTarget, Vector3.up);
+
         }
     }
 }
