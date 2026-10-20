@@ -68,6 +68,8 @@ namespace TFR.Board
                 stems[i].startColor = stems[i].endColor = color;
                 markers[i].transform.localPosition = point;
                 markers[i].material.color = color;
+
+                markers[i].material.color = Color.Lerp(Color.gray, color, corner.Contact);
             }
         }
 

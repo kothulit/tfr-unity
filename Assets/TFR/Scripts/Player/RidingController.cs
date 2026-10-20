@@ -35,12 +35,13 @@ namespace TFR.Player
         [SerializeField] float boardLength = 1f;
         [SerializeField] float boardWidth = 0.25f;
         [SerializeField] float boardMaxDeviation = 0.05f;
-        [SerializeField] float boardLongitudinalFriction = 0.05f;
-        [SerializeField] float boardLateralFriction = 1f;
+
         BoardPhysicsModel boardModel;
         GameObject boardPhysicsObject;
 
         [SerializeField] BoardContactSettings contactSettings = new();
+        [SerializeField] BoardFrictionSettings frictionSettings = new();
+
         [SerializeField] float ridingCapsuleLift = 0.3f;
         BoardGroundContact groundContact;
         float standingCapsuleHeight;
@@ -61,6 +62,14 @@ namespace TFR.Player
             playerCapsule = GetComponent<CapsuleCollider>();
             playerBody = GetComponent<Rigidbody>();
             uprightAssist = new UprightAssist(playerBody, uprightSettings);
+
+            // Запоминаем исходные размеры капсулы, чтобы поднять, а потом вернуть на место
+            playerCapsule = GetComponent<CapsuleCollider>();
+            if (playerCapsule != null)
+            {
+                standingCapsuleHeight = playerCapsule.height;
+                standingCapsuleCenter = playerCapsule.center;
+            }
 
             // В сцене капсула и динамическое тело могут быть включены вместе с CharacterController.
             // До встёгивания персонажа двигает только контроллер бега.
@@ -171,21 +180,30 @@ namespace TFR.Player
             {
                 playerBody.isKinematic = !ride;
                 playerBody.useGravity = ride;
+                playerBody.interpolation = ride ? RigidbodyInterpolation.Interpolate : RigidbodyInterpolation.None;
+            }
+
+            // Поднимаем капсулу для того, чтобы она не мешала доске скользить
+            if (playerCapsule != null)
+            {
+                playerCapsule.enabled = ride;
+                float lift = ride ? ridingCapsuleLift : 0f;
+                playerCapsule.height = standingCapsuleHeight - lift;
+                playerCapsule.center = standingCapsuleCenter + Vector3.up * (lift * 0.5f);
             }
         }
 
         void CreateBoardPhysics()
         {
-            boardModel = new BoardPhysicsModel(boardLength, boardWidth, boardMaxDeviation,
-                boardLongitudinalFriction, boardLateralFriction);
+            boardModel = new BoardPhysicsModel(boardLength, boardWidth, boardMaxDeviation);
             boardPhysicsObject = new GameObject("BoardPhysics");
             boardPhysicsObject.transform.SetParent(transform, false);
-            float feet = playerCapsule.center.y - playerCapsule.height * 0.5f;
+            float feet = standingCapsuleCenter.y - standingCapsuleHeight * 0.5f;
             boardPhysicsObject.transform.localPosition = new Vector3(0f, feet, 0f);
             boardPhysicsObject.transform.localRotation = Quaternion.Euler(0f, boardPhysicsYaw, 0f);
             boardPhysicsObject.AddComponent<BoardPhysicsView>().Bind(boardModel);
 
-            groundContact = new BoardGroundContact(boardModel, boardPhysicsObject.transform, playerBody, contactSettings);
+            groundContact = new BoardGroundContact(boardModel, boardPhysicsObject.transform, playerBody, contactSettings, frictionSettings);
         }
         void DestroyBoardPhysics()
         {

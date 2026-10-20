@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using UnityEngine;
 
 namespace TFR.Board
@@ -7,21 +7,22 @@ namespace TFR.Board
     public sealed class BoardContactSettings
     {
         public LayerMask GroundMask = ~0;
-        /// <summary>Насколько выше угла начинается луч. Должно быть больше возможного проваливания за шаг.</summary>
+        /// <summary>РќР°СЃРєРѕР»СЊРєРѕ РІС‹С€Рµ СѓРіР»Р° РЅР°С‡РёРЅР°РµС‚СЃСЏ Р»СѓС‡. Р”РѕР»Р¶РЅРѕ Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ РІРѕР·РјРѕР¶РЅРѕРіРѕ РїСЂРѕРІР°Р»РёРІР°РЅРёСЏ Р·Р° С€Р°Рі.</summary>
         public float CastHeight = 0.3f;
-        /// <summary>Запас ниже угла, в пределах которого угол считается стоящим на земле.</summary>
+        /// <summary>Р—Р°РїР°СЃ РЅРёР¶Рµ СѓРіР»Р°, РІ РїСЂРµРґРµР»Р°С… РєРѕС‚РѕСЂРѕРіРѕ СѓРіРѕР» СЃС‡РёС‚Р°РµС‚СЃСЏ СЃС‚РѕСЏС‰РёРј РЅР° Р·РµРјР»Рµ.</summary>
         public float GroundedDepth = 0.05f;
-        /// <summary>Н/м на один угол. При массе 70 кг угол проседает примерно на сантиметр.</summary>
+        /// <summary>Рќ/Рј РЅР° РѕРґРёРЅ СѓРіРѕР». РџСЂРё РјР°СЃСЃРµ 70 РєРі СѓРіРѕР» РїСЂРѕСЃРµРґР°РµС‚ РїСЂРёРјРµСЂРЅРѕ РЅР° СЃР°РЅС‚РёРјРµС‚СЂ.</summary>
         public float Stiffness = 17000f;
-        /// <summary>Н·с/м на один угол.</summary>
+        /// <summary>РќВ·СЃ/Рј РЅР° РѕРґРёРЅ СѓРіРѕР».</summary>
         public float Damping = 550f;
-        /// <summary>Скорость скольжения в м/с, при которой трение выходит на полную силу. Убирает дрожание около нуля.</summary>
+        /// <summary>РЎРєРѕСЂРѕСЃС‚СЊ СЃРєРѕР»СЊР¶РµРЅРёСЏ РІ Рј/СЃ, РїСЂРё РєРѕС‚РѕСЂРѕР№ С‚СЂРµРЅРёРµ РІС‹С…РѕРґРёС‚ РЅР° РїРѕР»РЅСѓСЋ СЃРёР»Сѓ. РЈР±РёСЂР°РµС‚ РґСЂРѕР¶Р°РЅРёРµ РѕРєРѕР»Рѕ РЅСѓР»СЏ.</summary>
         public float FrictionSlipSpeed = 0.1f;
     }
 
     /// <summary>
-    /// Не даёт углам BoardPhysicsModel уйти под поверхность: каждый угол работает как пружина с демпфером по лучу.
-    /// Вызывается из FixedUpdate.
+    /// РќРµ РґР°С‘С‚ СѓРіР»Р°Рј BoardPhysicsModel СѓР№С‚Рё РїРѕРґ РїРѕРІРµСЂС…РЅРѕСЃС‚СЊ: РєР°Р¶РґС‹Р№ СѓРіРѕР» СЂР°Р±РѕС‚Р°РµС‚ РєР°Рє РїСЂСѓР¶РёРЅР° СЃ РґРµРјРїС„РµСЂРѕРј РїРѕ Р»СѓС‡Сѓ.
+    /// РўСЂРµРЅРёРµ РІ РєР°Р¶РґРѕРј СѓРіР»Рµ Р·Р°РІРёСЃРёС‚ РѕС‚ РµРіРѕ Р·Р°РєР°РЅС‚РѕРІРєРё РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЃРєР»РѕРЅР°.
+    /// Р’С‹Р·С‹РІР°РµС‚СЃСЏ РёР· FixedUpdate.
     /// </summary>
     public sealed class BoardGroundContact
     {
@@ -29,67 +30,135 @@ namespace TFR.Board
         readonly Transform frame;
         readonly Rigidbody body;
         readonly BoardContactSettings settings;
+        readonly BoardFrictionSettings frictionSettings;
         readonly bool[] grounded = new bool[4];
+        readonly RaycastHit[] hits = new RaycastHit[4];
+        readonly Vector3[] points = new Vector3[4];
 
-        public BoardGroundContact(BoardPhysicsModel model, Transform frame, Rigidbody body, BoardContactSettings settings)
+        public BoardGroundContact(BoardPhysicsModel model,
+            Transform frame,
+            Rigidbody body,
+            BoardContactSettings contactSettings,
+            BoardFrictionSettings frictionSettings)
         {
             this.model = model;
             this.frame = frame;
             this.body = body;
-            this.settings = settings;
+            this.settings = contactSettings;
+            this.frictionSettings = frictionSettings;
         }
 
-        /// <summary>Хотя бы один угол касается поверхности.</summary>
+        /// <summary>РҐРѕС‚СЏ Р±С‹ РѕРґРёРЅ СѓРіРѕР» РєР°СЃР°РµС‚СЃСЏ РїРѕРІРµСЂС…РЅРѕСЃС‚Рё.</summary>
         public bool IsGrounded { get; private set; }
 
         public bool IsCornerGrounded(BoardCorner corner) => grounded[(int)corner];
 
         public void FixedTick()
         {
-            IsGrounded = false;
             Vector3 up = frame.up;
+            float reach = Mathf.Max(settings.GroundedDepth, frictionSettings.ContactFadeHeight);
+            int contacts = 0;
 
+            // РЎРЅР°С‡Р°Р»Р° РІСЃРµ Р»СѓС‡Рё: С‚СЂРµРЅРёСЋ РЅСѓР¶РЅРѕ Р·РЅР°С‚СЊ С‡РёСЃР»Рѕ РєР°СЃР°РЅРёР№ РґРѕ С‚РѕРіРѕ, РєР°Рє РїСЂРёР»РѕР¶РµРЅС‹ СЃРёР»С‹.
+            for (int i = 0; i < 4; i++)
+            {
+                points[i] = frame.TransformPoint(model.Corners[i].LocalPosition);
+                Vector3 origin = points[i] + up * settings.CastHeight;
+                grounded[i] = Physics.Raycast(origin, -up, out hits[i], settings.CastHeight + reach,
+                    settings.GroundMask, QueryTriggerInteraction.Ignore);
+                if (grounded[i])
+                    contacts++;
+            }
+            IsGrounded = contacts > 0;
+
+            float fadeHeight = Mathf.Max(frictionSettings.ContactFadeHeight, 0.0001f);
             for (int i = 0; i < 4; i++)
             {
                 BoardContactPoint corner = model.Corners[i];
-                Vector3 point = frame.TransformPoint(corner.LocalPosition);
-                Vector3 origin = point + up * settings.CastHeight;
-                float distance = settings.CastHeight + settings.GroundedDepth;
-
-                grounded[i] = Physics.Raycast(origin, -up, out RaycastHit hit, distance,
-                    settings.GroundMask, QueryTriggerInteraction.Ignore);
+                corner.Contact = 0f;
                 if (!grounded[i])
                     continue;
-                IsGrounded = true;
 
-                // Больше нуля — угол ушёл под поверхность.
+                RaycastHit hit = hits[i];
+                Vector3 point = points[i];
+
+                // Р‘РѕР»СЊС€Рµ РЅСѓР»СЏ вЂ” СѓРіРѕР» СѓС€С‘Р» РїРѕРґ РїРѕРІРµСЂС…РЅРѕСЃС‚СЊ, РјРµРЅСЊС€Рµ РЅСѓР»СЏ вЂ” РІРёСЃРёС‚ РЅР°Рґ РЅРµР№.
                 float penetration = settings.CastHeight - hit.distance;
-                if (penetration <= 0f)
+                corner.Contact = 1f - Mathf.Clamp01(-penetration / fadeHeight);
+                if (corner.Contact <= 0f)
                     continue;
 
                 Vector3 velocity = body.GetPointVelocity(point);
-                float normalSpeed = Vector3.Dot(velocity, hit.normal);
-                float normalForce = Mathf.Max(0f, settings.Stiffness * penetration - settings.Damping * normalSpeed);
+                float normalForce = 0f;
+                if (penetration > 0f)
+                {
+                    float normalSpeed = Vector3.Dot(velocity, hit.normal);
+                    normalForce = Mathf.Max(0f, settings.Stiffness * penetration - settings.Damping * normalSpeed);
+                    body.AddForceAtPosition(hit.normal * normalForce, point);
+                }
 
-                body.AddForceAtPosition(hit.normal * normalForce, point);
-                ApplyFriction(corner, point, hit.normal, velocity, normalForce);
+                ApplyFriction(corner, point, hit.normal, velocity, normalForce, contacts);
             }
+
+            ApplyAirDrag();
         }
 
-        void ApplyFriction(BoardContactPoint corner, Vector3 point, Vector3 normal, Vector3 velocity, float normalForce)
+        void ApplyFriction(BoardContactPoint corner, Vector3 point, Vector3 normal, Vector3 velocity,
+            float normalForce, int contacts)
         {
             Vector3 nose = Vector3.ProjectOnPlane(frame.forward, normal).normalized;
-            Vector3 toe = Vector3.ProjectOnPlane(frame.right, normal).normalized;
+            Vector3 toe = Vector3.Cross(normal, nose);
+
+            float edge = EdgeAngle(corner, normal);
+            corner.EdgeAngle = edge;
+            float absEdge = Mathf.Abs(edge);
+
+            float vAlong = Vector3.Dot(velocity, nose);
+            float vSide = Vector3.Dot(velocity, toe);
+
+            // +1 вЂ” РІРїРµСЂРµРґРё РїРѕ СЃРєРѕР»СЊР¶РµРЅРёСЋ РѕРїСѓС‰РµРЅРЅС‹Р№ РєР°РЅС‚, -1 вЂ” РїРѕРґРЅСЏС‚С‹Р№, 0 вЂ” РґРѕСЃРєР° РїР»Р°С€РјСЏ.
+            float blend = Mathf.Max(frictionSettings.FlatBlendAngle, 0.01f);
+            float leadingDown = Mathf.Clamp(edge / blend, -1f, 1f) * Mathf.Sign(vSide);
+
+            float muAlong = frictionSettings.AlongEdge.Evaluate(absEdge);
+            float muSide = Mathf.Lerp(frictionSettings.TowardBase.Evaluate(absEdge),
+                                      frictionSettings.AwayFromBase.Evaluate(absEdge),
+                                      0.5f + 0.5f * leadingDown);
 
             float slip = Mathf.Max(settings.FrictionSlipSpeed, 0.0001f);
-            float longitudinal = Mathf.Clamp(Vector3.Dot(velocity, nose) / slip, -1f, 1f);
-            float lateral = Mathf.Clamp(Vector3.Dot(velocity, toe) / slip, -1f, 1f);
+            float fAlong = Mathf.Clamp(vAlong / slip, -1f, 1f) * muAlong * normalForce
+                         + frictionSettings.AlongDrag * corner.Contact * vAlong * Mathf.Abs(vAlong);
+            float fSide = Mathf.Clamp(vSide / slip, -1f, 1f) * muSide * normalForce
+                        + frictionSettings.SideDrag * corner.Contact * vSide * Mathf.Abs(vSide);
 
-            Vector3 force =
-                -nose * (longitudinal * corner.LongitudinalFriction * normalForce)
-                - toe * (lateral * corner.LateralFriction * normalForce);
+            // РЎРёР»Р° Р·Р° С€Р°Рі РЅРµ РґРѕР»Р¶РЅР° СЂР°Р·РІРѕСЂР°С‡РёРІР°С‚СЊ СЃРєРѕСЂРѕСЃС‚СЊ С‚РѕС‡РєРё РІ РѕР±СЂР°С‚РЅСѓСЋ СЃС‚РѕСЂРѕРЅСѓ, РёРЅР°С‡Рµ Р±РѕР»СЊС€РѕРµ Ој СЂР°СЃРєР°С‡РёРІР°РµС‚ С‚РµР»Рѕ.
+            float stop = body.mass / contacts / Time.fixedDeltaTime;
+            fAlong = Mathf.Sign(vAlong) * Mathf.Min(Mathf.Abs(fAlong), stop * Mathf.Abs(vAlong));
+            fSide = Mathf.Sign(vSide) * Mathf.Min(Mathf.Abs(fSide), stop * Mathf.Abs(vSide));
 
-            body.AddForceAtPosition(force, point);
+            body.AddForceAtPosition(-nose * fAlong - toe * fSide, point);
+        }
+
+        /// <summary>
+        /// Р—Р°РєР°РЅС‚РѕРІРєР° С‚РѕС‡РєРё РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЃРєР»РѕРЅР°: РєСЂРµРЅ РІСЃРµР№ РґРѕСЃРєРё РїР»СЋСЃ РїРµСЂРµРєРѕСЃ РµС‘ РєРѕРЅС†Р° РѕС‚ РїРµСЂРµРЅРѕСЃР° РІРµСЃР°.
+        /// РќР°РєР»РѕРЅ РЅРѕСЃ/С…РІРѕСЃС‚ РЅРµ СѓС‡РёС‚С‹РІР°РµС‚СЃСЏ. В«+В» вЂ” РЅРѕСЃРѕС‡РЅС‹Р№ РєР°РЅС‚ РЅРёР¶Рµ.
+        /// </summary>
+        float EdgeAngle(BoardContactPoint corner, Vector3 normal)
+        {
+            float frameRoll = Mathf.Atan2(-Vector3.Dot(frame.right, normal), Vector3.Dot(frame.up, normal));
+
+            bool nose = corner.NoseSide > 0;
+            BoardContactPoint toe = model[nose ? BoardCorner.NoseToe : BoardCorner.TailToe];
+            BoardContactPoint heel = model[nose ? BoardCorner.NoseHeel : BoardCorner.TailHeel];
+            float twist = Mathf.Atan2(heel.Height - toe.Height, model.Width);
+
+            return (frameRoll + twist) * Mathf.Rad2Deg;
+        }
+
+        void ApplyAirDrag()
+        {
+            Vector3 velocity = body.linearVelocity;
+            body.AddForce(-frictionSettings.AirDrag * velocity.magnitude * velocity);
         }
     }
 }

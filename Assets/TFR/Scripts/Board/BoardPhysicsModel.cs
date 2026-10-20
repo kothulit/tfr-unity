@@ -28,19 +28,16 @@ namespace TFR.Board
 
         /// <summary>¬ысота над плоскостью доски. ќтрицательна€ Ч ниже плоскости.</summary>
         public float Height;
-        /// <summary>“рение вдоль доски (нос Ч хвост).</summary>
-        public float LongitudinalFriction;
-        /// <summary>“рение поперЄк доски (носок Ч п€тка).</summary>
-        public float LateralFriction;
+        /// <summary>”гол закантовки в этой точке, градусы. Ђ+ї Ч носочный кант ниже. ќбновл€ет BoardGroundContact.</summary>
+        public float EdgeAngle;
+        /// <summary>0 Ч точка в воздухе, 1 Ч касаетс€ склона. ќбновл€ет BoardGroundContact.</summary>
+        public float Contact;
 
-        public BoardContactPoint(int noseSide, int toeSide, float length, float width,
-            float longitudinalFriction, float lateralFriction)
+        public BoardContactPoint(int noseSide, int toeSide, float length, float width)
         {
             NoseSide = noseSide;
             ToeSide = toeSide;
             PlanePosition = new Vector2(toeSide * width * 0.5f, noseSide * length * 0.5f);
-            LongitudinalFriction = longitudinalFriction;
-            LateralFriction = lateralFriction;
         }
 
         /// <summary>Ћокальна€ точка: x Ч к носку, y Ч вверх, z Ч к носу.</summary>
@@ -62,17 +59,16 @@ namespace TFR.Board
         public IReadOnlyList<BoardContactPoint> Corners => corners;
         public BoardContactPoint this[BoardCorner corner] => corners[(int)corner];
 
-        public BoardPhysicsModel(float length, float width, float maxDeviation,
-            float longitudinalFriction, float lateralFriction)
+        public BoardPhysicsModel(float length, float width, float maxDeviation)
         {
             Length = length;
             Width = width;
             MaxDeviation = Mathf.Abs(maxDeviation);
 
-            corners[(int)BoardCorner.NoseToe] = new(1, 1, length, width, longitudinalFriction, lateralFriction);
-            corners[(int)BoardCorner.NoseHeel] = new(1, -1, length, width, longitudinalFriction, lateralFriction);
-            corners[(int)BoardCorner.TailHeel] = new(-1, -1, length, width, longitudinalFriction, lateralFriction);
-            corners[(int)BoardCorner.TailToe] = new(-1, 1, length, width, longitudinalFriction, lateralFriction);
+            corners[(int)BoardCorner.NoseToe] = new(1, 1, length, width);
+            corners[(int)BoardCorner.NoseHeel] = new(1, -1, length, width);
+            corners[(int)BoardCorner.TailHeel] = new(-1, -1, length, width);
+            corners[(int)BoardCorner.TailToe] = new(-1, 1, length, width);
         }
 
         /// <summary>
