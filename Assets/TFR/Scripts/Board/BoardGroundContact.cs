@@ -104,39 +104,51 @@ namespace TFR.Board
         }
 
         void ApplyFriction(BoardContactPoint corner, Vector3 point, Vector3 normal, Vector3 velocity,
-            float normalForce, int contacts)
+    float normalForce, int contacts)
         {
             Vector3 nose = Vector3.ProjectOnPlane(frame.forward, normal).normalized;
             Vector3 toe = Vector3.Cross(normal, nose);
-
             float edge = EdgeAngle(corner, normal);
             corner.EdgeAngle = edge;
             float absEdge = Mathf.Abs(edge);
-
+            // Боковая сила на высоте центра масс: уводит и разворачивает доску, но не опрокидывает тело.
+            Vector3 sidePoint = point + normal * Vector3.Dot(body.worldCenterOfMass - point, normal);
             float vAlong = Vector3.Dot(velocity, nose);
-            float vSide = Vector3.Dot(velocity, toe);
-
+            float vSide = Vector3.Dot(body.GetPointVelocity(sidePoint), toe);
             // +1 — впереди по скольжению опущенный кант, -1 — поднятый, 0 — доска плашмя.
             float blend = Mathf.Max(frictionSettings.FlatBlendAngle, 0.01f);
             float leadingDown = Mathf.Clamp(edge / blend, -1f, 1f) * Mathf.Sign(vSide);
-
             float muAlong = frictionSettings.AlongEdge.Evaluate(absEdge);
             float muSide = Mathf.Lerp(frictionSettings.TowardBase.Evaluate(absEdge),
                                       frictionSettings.AwayFromBase.Evaluate(absEdge),
                                       0.5f + 0.5f * leadingDown);
-
             float slip = Mathf.Max(settings.FrictionSlipSpeed, 0.0001f);
             float fAlong = Mathf.Clamp(vAlong / slip, -1f, 1f) * muAlong * normalForce
                          + frictionSettings.AlongDrag * corner.Contact * vAlong * Mathf.Abs(vAlong);
             float fSide = Mathf.Clamp(vSide / slip, -1f, 1f) * muSide * normalForce
                         + frictionSettings.SideDrag * corner.Contact * vSide * Mathf.Abs(vSide);
+            // Не больше половины силы, гасящей скорость точки за шаг, иначе трение раскачивает тело.
+            float perStep = 0.5f / contacts / Time.fixedDeltaTime;
+            float alongLimit = perStep * EffectiveMass(point, nose);
+            float sideLimit = perStep * EffectiveMass(sidePoint, toe);
+            fAlong = Mathf.Sign(vAlong) * Mathf.Min(Mathf.Abs(fAlong), alongLimit * Mathf.Abs(vAlong));
+            fSide = Mathf.Sign(vSide) * Mathf.Min(Mathf.Abs(fSide), sideLimit * Mathf.Abs(vSide));
+            body.AddForceAtPosition(-nose * fAlong, point);
+            body.AddForceAtPosition(-toe * fSide, sidePoint);
+        }
 
-            // Сила за шаг не должна разворачивать скорость точки в обратную сторону, иначе большое μ раскачивает тело.
-            float stop = body.mass / contacts / Time.fixedDeltaTime;
-            fAlong = Mathf.Sign(vAlong) * Mathf.Min(Mathf.Abs(fAlong), stop * Mathf.Abs(vAlong));
-            fSide = Mathf.Sign(vSide) * Mathf.Min(Mathf.Abs(fSide), stop * Mathf.Abs(vSide));
-
-            body.AddForceAtPosition(-nose * fAlong - toe * fSide, point);
+        /// <summary>
+        /// Масса, которую чувствует сила в точке вдоль направления: тело не только сдвигается, но и поворачивается.
+        /// </summary>
+        float EffectiveMass(Vector3 point, Vector3 direction)
+        {
+            Vector3 lever = Vector3.Cross(point - body.worldCenterOfMass, direction);
+            Vector3 local = Quaternion.Inverse(body.rotation * body.inertiaTensorRotation) * lever;
+            Vector3 inertia = body.inertiaTensor;
+            float angular = local.x * local.x / inertia.x
+                          + local.y * local.y / inertia.y
+                          + local.z * local.z / inertia.z;
+            return 1f / (1f / body.mass + angular);
         }
 
         /// <summary>

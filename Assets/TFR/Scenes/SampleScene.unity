@@ -1222,14 +1222,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 804336337}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0.06975647, y: 0, z: 0, w: 0.9975641}
   m_LocalPosition: {x: 62.89, y: 0.02, z: -0.22784}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 133056358}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 8, y: 0, z: 0}
 --- !u!114 &804336341
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1245,7 +1245,7 @@ MonoBehaviour:
   shiftSpeed: 0.8
   maximumOffset: 0.35
   boardPhysicsOffset: {x: 0, y: -0.83, z: 0}
-  boardPhysicsYaw: 90
+  boardPhysicsYaw: -90
   boardLength: 1
   boardWidth: 0.25
   boardMaxDeviation: 0.05
@@ -1338,12 +1338,13 @@ MonoBehaviour:
     AirDrag: 0.3
   ridingCapsuleLift: 0.3
   uprightSettings:
-    Strength: 0.5
-    Frequency: 1.2
-    DampingRatio: 0.8
-    MaxAcceleration: 15
-    FadeStartAngle: 25
-    GiveUpAngle: 60
+    Strength: 1
+    Frequency: 2
+    DampingRatio: 1
+    MaxAcceleration: 40
+    FadeStartAngle: 50
+    GiveUpAngle: 80
+  maxLeanAngle: 20
 --- !u!114 &804336342
 MonoBehaviour:
   m_ObjectHideFlags: 0

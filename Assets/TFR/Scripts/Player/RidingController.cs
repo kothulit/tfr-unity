@@ -48,6 +48,8 @@ namespace TFR.Player
         Vector3 standingCapsuleCenter;
 
         [SerializeField] UprightAssistSettings uprightSettings = new();
+        /// <summary>Наклон тела к канту при полном переносе веса, градусы.</summary>
+        [SerializeField, Range(0f, 45f)] float maxLeanAngle = 20f;
         UprightAssist uprightAssist;
 
         public void Construct(IGameplayInput gameplayInput, WeightController weightController)
@@ -147,16 +149,32 @@ namespace TFR.Player
             // Нос слева, хвост справа: стик вправо — вес к хвосту. Стик вперёд — на носки.
             Vector2 move = input.Move;
             weight.Tick(new Vector2(-move.x, move.y), deltaTime);
-            boardModel?.ApplyWeight(weight.NoseTail, weight.ToeHeel);
+            // Носок/пятка теперь наклоняет тело, а не опускает кант доски.
+            boardModel?.ApplyWeight(weight.NoseTail, 0f);
         }
 
         void FixedUpdate()
         {
-            if (riding && groundContact != null)
+            if (!riding)
+                return;
+            if (groundContact != null)
                 groundContact.FixedTick();
+            uprightAssist.TargetUp = LeanTarget();
+            uprightAssist.FixedTick();
+        }
 
-            if (riding)
-                uprightAssist.FixedTick();
+        /// <summary>
+        /// Вертикаль, наклонённая к носочному или пяточному канту по переносу веса.
+        /// </summary>
+        Vector3 LeanTarget()
+        {
+            if (boardPhysicsObject == null)
+                return Vector3.up;
+            Vector3 toe = Vector3.ProjectOnPlane(boardPhysicsObject.transform.right, Vector3.up);
+            if (toe.sqrMagnitude < 1e-4f)
+                return Vector3.up;
+            float lean = weight.ToeHeel * maxLeanAngle * Mathf.Deg2Rad;
+            return Vector3.up * Mathf.Cos(lean) + toe.normalized * Mathf.Sin(lean);
         }
 
         /// <summary>
