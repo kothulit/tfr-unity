@@ -19,6 +19,10 @@ namespace TFR.Board
         public float Damping = 550f;
         /// <summary>Скорость скольжения в м/с, при которой трение выходит на полную силу. Убирает дрожание около нуля.</summary>
         public float FrictionSlipSpeed = 0.1f;
+        /// <summary>Н·с/м на один угол, пока угол вдавливается в поверхность.</summary>
+        public float CompressionDamping = 450f;
+        /// <summary>Н·с/м на один угол, пока угол выходит из поверхности. Больше — меньше подбрасывает.</summary>
+        public float ReboundDamping = 1500f;
     }
 
     /// <summary>
@@ -107,7 +111,8 @@ namespace TFR.Board
                 if (penetration > 0f)
                 {
                     float normalSpeed = Vector3.Dot(velocity, groundNormal);
-                    normalForce = Mathf.Max(0f, settings.Stiffness * penetration - settings.Damping * normalSpeed);
+                    float damping = normalSpeed < 0f ? settings.CompressionDamping : settings.ReboundDamping;
+                    normalForce = Mathf.Max(0f, settings.Stiffness * penetration - damping * normalSpeed);
                     body.AddForceAtPosition(groundNormal * normalForce, point);
                 }
 
