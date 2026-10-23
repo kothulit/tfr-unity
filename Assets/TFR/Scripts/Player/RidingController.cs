@@ -40,6 +40,9 @@ namespace TFR.Player
         [SerializeField] float maxCenterOfMassShift = 0.1f;
         Vector3 baseCenterOfMass;
 
+        /// <summary>Ќаибольший поворот канта нагруженного конца, градусы.</summary>
+        [SerializeField, Range(0f, 30f)] float maxEndTwistAngle = 25f;
+
         BoardPhysicsModel boardModel;
         GameObject boardPhysicsObject;
 
@@ -161,8 +164,6 @@ namespace TFR.Player
             // Ќос слева, хвост справа: стик вправо Ч вес к хвосту. —тик вперЄд Ч на носки.
             Vector2 move = input.Move;
             weight.Tick(new Vector2(-move.x, move.y), deltaTime);
-            // Ќагруженный конец поворачивает кант к носку или п€тке, другой конец не трогаем.
-            boardModel?.ApplyEndEdge(weight.NoseTail, weight.ToeHeel);
         }
 
         void FixedUpdate()
@@ -170,6 +171,7 @@ namespace TFR.Player
             if (!riding)
                 return;
             ShiftCenterOfMass();
+            ApplyEndEdge();
             if (groundContact != null)
                 groundContact.FixedTick();
             uprightAssist.TargetUp = LeanTarget();
@@ -280,6 +282,28 @@ namespace TFR.Player
                 forward = Vector3.ProjectOnPlane(transform.up, Vector3.up);
             if (forward.sqrMagnitude > 1e-4f)
                 transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
+        }
+
+        /// <summary>
+        /// Ќагруженный конец поворачивает кант к носку или п€тке.
+        /// ѕередний по боковому скольжению кант нельз€ опустить ниже плоского положени€: он врежетс€ в снег.
+        /// </summary>
+        void ApplyEndEdge()
+        {
+            if (boardModel == null || groundContact == null)
+                return;
+            float wanted = weight.ToeHeel * maxEndTwistAngle;
+            // ѕоворот, при котором конец л€жет плашм€ к склону.
+            float flat = -groundContact.FrameEdgeAngle;
+            float twist = wanted;
+            if (groundContact.LeadingSide > 0f)
+                twist = Mathf.Min(wanted, flat);
+            else if (groundContact.LeadingSide < 0f)
+                twist = Mathf.Max(wanted, flat);
+            //  онец не поворачиваетс€ в сторону, противоположную вводу.
+            if (twist * wanted <= 0f)
+                twist = 0f;
+            boardModel.ApplyEndEdge(weight.NoseTail, twist);
         }
     }
 }

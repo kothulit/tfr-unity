@@ -13,6 +13,8 @@ namespace TFR.Board
         public float ProbeRadius = 0.05f;
         /// <summary>Запас ниже угла, в пределах которого угол считается стоящим на земле.</summary>
         public float GroundedDepth = 0.05f;
+        /// <summary>Боковая скорость в м/с, начиная с которой доска считается скользящей боком.</summary>
+        public float SideSlipThreshold = 0.3f;
         /// <summary>Н/м на один угол. При массе 70 кг угол проседает примерно на сантиметр.</summary>
         public float Stiffness = 17000f;
         /// <summary>Н·с/м на один угол.</summary>
@@ -58,6 +60,15 @@ namespace TFR.Board
         /// <summary>Хотя бы один угол касается поверхности.</summary>
         public bool IsGrounded { get; private set; }
 
+        /// <summary>Крен рамки доски относительно склона без перекоса концов, градусы. «+» — носочный кант ниже. Без касания — 0.</summary>
+        public float FrameEdgeAngle { get; private set; }
+
+        /// <summary>
+        /// Какой кант идёт впереди при боковом скольжении: +1 — носочный, -1 — пяточный, 0 — доска едет вдоль себя или стоит на ровном.
+        /// Пока доска почти не движется, берётся сторона, куда тянет склон.
+        /// </summary>
+        public float LeadingSide { get; private set; }
+
         public bool IsCornerGrounded(BoardCorner corner) => grounded[(int)corner];
 
         public void FixedTick()
@@ -83,6 +94,23 @@ namespace TFR.Board
                 if (grounded[i])
                     normalSum += hits[i].normal;
             Vector3 groundNormal = contacts > 0 ? normalSum.normalized : up;
+
+            FrameEdgeAngle = contacts > 0
+                ? Mathf.Atan2(-Vector3.Dot(frame.right, groundNormal), Vector3.Dot(frame.up, groundNormal)) * Mathf.Rad2Deg : 0f;
+
+            LeadingSide = 0f;
+            if (contacts > 0)
+            {
+                Vector3 noseOnSlope = Vector3.ProjectOnPlane(frame.forward, groundNormal).normalized;
+                Vector3 toeOnSlope = Vector3.Cross(groundNormal, noseOnSlope);
+                Vector3 velocity = body.linearVelocity;
+                float sideSpeed = Vector3.Dot(velocity, toeOnSlope);
+                float sidePull = Vector3.Dot(Physics.gravity, toeOnSlope);
+                if (Mathf.Abs(sideSpeed) > settings.SideSlipThreshold)
+                    LeadingSide = Mathf.Sign(sideSpeed);
+                else if (velocity.magnitude < settings.SideSlipThreshold && Mathf.Abs(sidePull) > 0.5f)
+                    LeadingSide = Mathf.Sign(sidePull);
+            }
 
             float fadeHeight = Mathf.Max(frictionSettings.ContactFadeHeight, 0.0001f);
             for (int i = 0; i < 4; i++)
@@ -197,5 +225,6 @@ namespace TFR.Board
             Vector3 velocity = body.linearVelocity;
             body.AddForce(-frictionSettings.AirDrag * velocity.magnitude * velocity);
         }
+
     }
 }

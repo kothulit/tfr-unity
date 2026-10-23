@@ -97,18 +97,19 @@ namespace TFR.Board
         }
 
         /// <summary>
-        /// ѕеренос веса на один конец поворачивает кант только этого конца к носку или п€тке.
+        /// ѕоворачивает кант нагруженного конца на twistDegrees: Ђ+ї Ч к носку, Ђ-ї Ч к п€тке.
         /// ƒругой конец остаЄтс€ в плоскости доски.
-        /// noseTail: +1 Ч вес на носу, -1 Ч на хвосте. toeHeel: +1 Ч к носку, -1 Ч к п€тке.
+        /// noseTail: +1 Ч вес на носу, -1 Ч на хвосте.
         /// </summary>
-        public void ApplyEndEdge(float noseTail, float toeHeel)
+        public void ApplyEndEdge(float noseTail, float twistDegrees)
         {
             noseTail = Mathf.Clamp(noseTail, -1f, 1f);
-            toeHeel = Mathf.Clamp(toeHeel, -1f, 1f);
+            float offset = Mathf.Clamp(Width * 0.5f * Mathf.Tan(twistDegrees * Mathf.Deg2Rad),
+                -MaxDeviation, MaxDeviation);
             foreach (BoardContactPoint corner in corners)
             {
                 float endWeight = Mathf.Max(0f, noseTail * corner.NoseSide);
-                corner.Height = -toeHeel * corner.ToeSide * endWeight * MaxDeviation;
+                corner.Height = -corner.ToeSide * endWeight * offset;
             }
         }
 

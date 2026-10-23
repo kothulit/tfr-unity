@@ -317,14 +317,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 98585502}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.06975647, y: 0, z: 0, w: 0.9975641}
-  m_LocalPosition: {x: 125.4, y: 11.8, z: 0}
+  m_LocalRotation: {x: 0.10452846, y: 0, z: 0, w: 0.9945219}
+  m_LocalPosition: {x: 125.4, y: 12.8, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1881124811}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 8, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 12, y: 0, z: 0}
 --- !u!4 &99527776 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7284643259353517314, guid: 981c87b6c06facd4c93f0fe6020655b2, type: 3}
@@ -1276,7 +1276,7 @@ Transform:
   m_GameObject: {fileID: 804336337}
   serializedVersion: 2
   m_LocalRotation: {x: 0.06975647, y: 0, z: 0, w: 0.9975641}
-  m_LocalPosition: {x: 59.4, y: 12.461, z: -0.22784}
+  m_LocalPosition: {x: 92.2, y: 13.34, z: -0.22784}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1301,8 +1301,9 @@ MonoBehaviour:
   boardPhysicsYaw: -90
   boardLength: 1
   boardWidth: 0.25
-  boardMaxDeviation: 0.03
+  boardMaxDeviation: 0.06
   maxCenterOfMassShift: 0.1
+  maxEndTwistAngle: 15
   contactSettings:
     GroundMask:
       serializedVersion: 2
@@ -1310,9 +1311,12 @@ MonoBehaviour:
     CastHeight: 0.6
     ProbeRadius: 0.05
     GroundedDepth: 0.05
+    SideSlipThreshold: 0.3
     Stiffness: 17000
     Damping: 550
     FrictionSlipSpeed: 0.1
+    CompressionDamping: 450
+    ReboundDamping: 1500
   frictionSettings:
     AlongEdge:
       serializedVersion: 2
@@ -1367,7 +1371,7 @@ MonoBehaviour:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.2
+        value: 0.1
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -1375,14 +1379,23 @@ MonoBehaviour:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 8.018442
-        value: 2.2928355
-        inSlope: 0.06946852
-        outSlope: 0.06946852
+        time: 4
+        value: 0.15
+        inSlope: 0.006923939
+        outSlope: 0.006923939
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.56774914
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 12
+        value: 2.5
+        inSlope: 0.20942277
+        outSlope: 0.20942277
         tangentMode: 0
         weightedMode: 0
         inWeight: 0.33333334
-        outWeight: 0.33333334
+        outWeight: 0.13459088
       - serializedVersion: 3
         time: 60
         value: 8
