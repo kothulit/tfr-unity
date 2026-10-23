@@ -33,6 +33,11 @@ namespace TFR.Board
         /// <summary>0 Ч точка в воздухе, 1 Ч касаетс€ склона. ќбновл€ет BoardGroundContact.</summary>
         public float Contact;
 
+        /// <summary>ƒл€ отладки: прижатие, боковой коэффициент трени€ и бокова€ сила на последнем шаге.</summary>
+        public float NormalForce;
+        public float SideMu;
+        public float SideForce;
+
         public BoardContactPoint(int noseSide, int toeSide, float length, float width)
         {
             NoseSide = noseSide;
@@ -88,6 +93,22 @@ namespace TFR.Board
                 float endFactor = 1f - Mathf.Abs(noseTail) + noseTail * corner.NoseSide;
                 float height = -toeHeel * corner.ToeSide * endFactor * MaxDeviation;
                 corner.Height = Mathf.Clamp(height, -MaxDeviation, MaxDeviation);
+            }
+        }
+
+        /// <summary>
+        /// ѕеренос веса на один конец поворачивает кант только этого конца к носку или п€тке.
+        /// ƒругой конец остаЄтс€ в плоскости доски.
+        /// noseTail: +1 Ч вес на носу, -1 Ч на хвосте. toeHeel: +1 Ч к носку, -1 Ч к п€тке.
+        /// </summary>
+        public void ApplyEndEdge(float noseTail, float toeHeel)
+        {
+            noseTail = Mathf.Clamp(noseTail, -1f, 1f);
+            toeHeel = Mathf.Clamp(toeHeel, -1f, 1f);
+            foreach (BoardContactPoint corner in corners)
+            {
+                float endWeight = Mathf.Max(0f, noseTail * corner.NoseSide);
+                corner.Height = -toeHeel * corner.ToeSide * endWeight * MaxDeviation;
             }
         }
 

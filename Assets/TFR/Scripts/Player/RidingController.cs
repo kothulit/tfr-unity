@@ -34,7 +34,11 @@ namespace TFR.Player
         [SerializeField] float boardPhysicsYaw = 90f;
         [SerializeField] float boardLength = 1f;
         [SerializeField] float boardWidth = 0.25f;
-        [SerializeField] float boardMaxDeviation = 0.05f;
+        [SerializeField] float boardMaxDeviation = 0.03f;
+
+        /// <summary>Сдвиг центра масс к носу или хвосту при полном переносе веса, метры.</summary>
+        [SerializeField] float maxCenterOfMassShift = 0.1f;
+        Vector3 baseCenterOfMass;
 
         BoardPhysicsModel boardModel;
         GameObject boardPhysicsObject;
@@ -50,6 +54,11 @@ namespace TFR.Player
         [SerializeField] UprightAssistSettings uprightSettings = new();
         /// <summary>Наклон тела к канту при полном переносе веса, градусы.</summary>
         [SerializeField, Range(0f, 45f)] float maxLeanAngle = 20f;
+        /// <summary>
+        /// Насколько вес на конце доски уменьшает наклон тела: 0 — не уменьшает, 1 — при весе целиком на конце тело не наклоняется.
+        /// </summary>
+        [SerializeField, Range(0f, 1f)] float endWeightLeanReduction = 1f;
+
         UprightAssist uprightAssist;
 
         public void Construct(IGameplayInput gameplayInput, WeightController weightController)
@@ -104,6 +113,9 @@ namespace TFR.Player
                 boardCollider.enabled = false;
 
             SetPlayerPhysics(true);
+            playerBody.ResetCenterOfMass();
+            baseCenterOfMass = playerBody.centerOfMass;
+
             uprightAssist.Enabled = true;
             riding = true;
 
@@ -149,18 +161,44 @@ namespace TFR.Player
             // Нос слева, хвост справа: стик вправо — вес к хвосту. Стик вперёд — на носки.
             Vector2 move = input.Move;
             weight.Tick(new Vector2(-move.x, move.y), deltaTime);
-            // Носок/пятка теперь наклоняет тело, а не опускает кант доски.
-            boardModel?.ApplyWeight(weight.NoseTail, 0f);
+            // Нагруженный конец поворачивает кант к носку или пятке, другой конец не трогаем.
+            boardModel?.ApplyEndEdge(weight.NoseTail, weight.ToeHeel);
         }
 
         void FixedUpdate()
         {
             if (!riding)
                 return;
+            ShiftCenterOfMass();
             if (groundContact != null)
                 groundContact.FixedTick();
             uprightAssist.TargetUp = LeanTarget();
             uprightAssist.FixedTick();
+        }
+
+        void OnGUI()
+        {
+            if (!riding || boardModel == null)
+                return;
+            var text = new System.Text.StringBuilder();
+            text.AppendLine($"NoseTail {weight.NoseTail:F2}   ToeHeel {weight.ToeHeel:F2}   lean {uprightAssist.TiltAngle:F1}");
+            for (int i = 0; i < 4; i++)
+            {
+                BoardContactPoint c = boardModel.Corners[i];
+                text.AppendLine($"{(BoardCorner)i,-9} contact {c.Contact:F2}  N {c.NormalForce,5:F0}  edge {c.EdgeAngle,6:F1}  mu {c.SideMu:F2}  F {c.SideForce,5:F0}");
+            }
+            GUI.Label(new Rect(10, 10, 700, 110), text.ToString());
+        }
+
+        /// <summary>
+        /// Перенос веса на нос или хвост: центр масс сдвигается вдоль доски, сама доска не наклоняется.
+        /// </summary>
+        void ShiftCenterOfMass()
+        {
+            if (boardPhysicsObject == null)
+                return;
+            Vector3 nose = boardPhysicsObject.transform.localRotation * Vector3.forward;
+            playerBody.centerOfMass = baseCenterOfMass + nose * (weight.NoseTail * maxCenterOfMassShift);
         }
 
         /// <summary>
@@ -173,7 +211,8 @@ namespace TFR.Player
             Vector3 toe = Vector3.ProjectOnPlane(boardPhysicsObject.transform.right, Vector3.up);
             if (toe.sqrMagnitude < 1e-4f)
                 return Vector3.up;
-            float lean = weight.ToeHeel * maxLeanAngle * Mathf.Deg2Rad;
+            float leanShare = 1f - endWeightLeanReduction * Mathf.Abs(weight.NoseTail);
+            float lean = weight.ToeHeel * leanShare * maxLeanAngle * Mathf.Deg2Rad;
             return Vector3.up * Mathf.Cos(lean) + toe.normalized * Mathf.Sin(lean);
         }
 

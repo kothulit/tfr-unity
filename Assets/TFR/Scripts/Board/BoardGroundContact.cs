@@ -8,7 +8,9 @@ namespace TFR.Board
     {
         public LayerMask GroundMask = ~0;
         /// <summary>Насколько выше угла начинается луч. Должно быть больше возможного проваливания за шаг.</summary>
-        public float CastHeight = 0.3f;
+        public float CastHeight = 0.6f;
+        /// <summary>Радиус сферы, которой ищется поверхность под углом. Сглаживает рёбра треугольников Terrain.</summary>
+        public float ProbeRadius = 0.05f;
         /// <summary>Запас ниже угла, в пределах которого угол считается стоящим на земле.</summary>
         public float GroundedDepth = 0.05f;
         /// <summary>Н/м на один угол. При массе 70 кг угол проседает примерно на сантиметр.</summary>
@@ -34,6 +36,7 @@ namespace TFR.Board
         readonly bool[] grounded = new bool[4];
         readonly RaycastHit[] hits = new RaycastHit[4];
         readonly Vector3[] points = new Vector3[4];
+
 
         public BoardGroundContact(BoardPhysicsModel model,
             Transform frame,
@@ -64,8 +67,8 @@ namespace TFR.Board
             {
                 points[i] = frame.TransformPoint(model.Corners[i].LocalPosition);
                 Vector3 origin = points[i] + up * settings.CastHeight;
-                grounded[i] = Physics.Raycast(origin, -up, out hits[i], settings.CastHeight + reach,
-                    settings.GroundMask, QueryTriggerInteraction.Ignore);
+                grounded[i] = Physics.SphereCast(origin, settings.ProbeRadius, -up, out hits[i],
+                    settings.CastHeight + reach, settings.GroundMask, QueryTriggerInteraction.Ignore);
                 if (grounded[i])
                     contacts++;
             }
@@ -76,6 +79,11 @@ namespace TFR.Board
             {
                 BoardContactPoint corner = model.Corners[i];
                 corner.Contact = 0f;
+
+                corner.NormalForce = 0f;
+                corner.SideMu = 0f;
+                corner.SideForce = 0f;
+
                 if (!grounded[i])
                     continue;
 
@@ -97,6 +105,7 @@ namespace TFR.Board
                     body.AddForceAtPosition(hit.normal * normalForce, point);
                 }
 
+                corner.NormalForce = normalForce;
                 ApplyFriction(corner, point, hit.normal, velocity, normalForce, contacts);
             }
 
@@ -135,6 +144,11 @@ namespace TFR.Board
             fSide = Mathf.Sign(vSide) * Mathf.Min(Mathf.Abs(fSide), sideLimit * Mathf.Abs(vSide));
             body.AddForceAtPosition(-nose * fAlong, point);
             body.AddForceAtPosition(-toe * fSide, sidePoint);
+
+            corner.SideMu = muSide;
+            corner.SideForce = fSide;
+            Debug.DrawRay(point, normal * (normalForce * 0.002f), Color.green);
+            Debug.DrawRay(sidePoint, -toe * (fSide * 0.005f), Color.yellow);
         }
 
         /// <summary>

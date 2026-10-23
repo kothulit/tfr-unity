@@ -33,6 +33,8 @@ namespace TFR.Player
 
         void Start()
         {
+            if (snowboard != null && playerHand != null && player.TryTakeBoard())
+                snowboard.Take(playerHand);
             UseRunning();
         }
 
@@ -100,6 +102,7 @@ namespace TFR.Player
                 if (!player.TryStowBoard())
                     return;
 
+                riding.End();
                 snowboard.Take(playerHand);
                 UseRunning();
                 return;
