@@ -74,6 +74,12 @@ namespace TFR.Board
             }
             IsGrounded = contacts > 0;
 
+            Vector3 normalSum = Vector3.zero;
+            for (int i = 0; i < 4; i++)
+                if (grounded[i])
+                    normalSum += hits[i].normal;
+            Vector3 groundNormal = contacts > 0 ? normalSum.normalized : up;
+
             float fadeHeight = Mathf.Max(frictionSettings.ContactFadeHeight, 0.0001f);
             for (int i = 0; i < 4; i++)
             {
@@ -91,7 +97,7 @@ namespace TFR.Board
                 Vector3 point = points[i];
 
                 // Больше нуля — угол ушёл под поверхность, меньше нуля — висит над ней.
-                float penetration = settings.CastHeight - hit.distance;
+                float penetration = settings.CastHeight - hit.distance - settings.ProbeRadius;
                 corner.Contact = 1f - Mathf.Clamp01(-penetration / fadeHeight);
                 if (corner.Contact <= 0f)
                     continue;
@@ -100,13 +106,13 @@ namespace TFR.Board
                 float normalForce = 0f;
                 if (penetration > 0f)
                 {
-                    float normalSpeed = Vector3.Dot(velocity, hit.normal);
+                    float normalSpeed = Vector3.Dot(velocity, groundNormal);
                     normalForce = Mathf.Max(0f, settings.Stiffness * penetration - settings.Damping * normalSpeed);
-                    body.AddForceAtPosition(hit.normal * normalForce, point);
+                    body.AddForceAtPosition(groundNormal * normalForce, point);
                 }
 
                 corner.NormalForce = normalForce;
-                ApplyFriction(corner, point, hit.normal, velocity, normalForce, contacts);
+                ApplyFriction(corner, point, groundNormal, velocity, normalForce, contacts);
             }
 
             ApplyAirDrag();
