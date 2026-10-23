@@ -16,6 +16,14 @@ namespace TFR.Board
         public float FlatBlendAngle = 2f;
         /// <summary>Высота над склоном, на которой влияние угла доски пропадает.</summary>
         public float ContactFadeHeight = 0.03f;
+
+        /// <summary>Радиус бокового выреза, метры. 0 — выреза нет.</summary>
+        public float SidecutRadius = 15f;
+        /// <summary>С этого угла закантовки вырез начинает вести доску по дуге, градусы.</summary>
+        public float SidecutEngageStart = 2f;
+        /// <summary>С этого угла вырез ведёт доску полностью, градусы.</summary>
+        public float SidecutEngageFull = 15f;
+
         /// <summary>Сопротивление снега на один угол, Н·с²/м².</summary>
         public float AlongDrag = 0.5f;
         public float SideDrag = 5f;

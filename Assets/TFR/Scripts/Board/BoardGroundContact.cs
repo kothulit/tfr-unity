@@ -154,11 +154,15 @@ namespace TFR.Board
         void ApplyFriction(BoardContactPoint corner, Vector3 point, Vector3 normal, Vector3 velocity,
     float normalForce, int contacts)
         {
-            Vector3 nose = Vector3.ProjectOnPlane(frame.forward, normal).normalized;
-            Vector3 toe = Vector3.Cross(normal, nose);
             float edge = EdgeAngle(corner, normal);
             corner.EdgeAngle = edge;
             float absEdge = Mathf.Abs(edge);
+
+            // Боковой вырез: кант идёт по дуге, «вдоль» и «поперёк» считаются от касательной в этой точке.
+            Vector3 nose = Vector3.ProjectOnPlane(frame.forward, normal).normalized;
+            nose = Quaternion.AngleAxis(SidecutAngle(corner, edge), normal) * nose;
+            Vector3 toe = Vector3.Cross(normal, nose);
+
             // Боковая сила на высоте центра масс: уводит и разворачивает доску, но не опрокидывает тело.
             Vector3 sidePoint = point + normal * Vector3.Dot(body.worldCenterOfMass - point, normal);
             float vAlong = Vector3.Dot(velocity, nose);
@@ -226,5 +230,21 @@ namespace TFR.Board
             body.AddForce(-frictionSettings.AirDrag * velocity.magnitude * velocity);
         }
 
+        /// <summary>
+        /// Поворот касательной канта в точке из-за бокового выреза, градусы.
+        /// Закантованная доска касается снега дугой радиусом SidecutRadius·cos(угла); касательная повёрнута к центру дуги у носа и от него у хвоста.
+        /// </summary>
+        float SidecutAngle(BoardContactPoint corner, float edge)
+        {
+            if (frictionSettings.SidecutRadius <= 0f)
+                return 0f;
+            float absEdge = Mathf.Abs(edge);
+            float engage = Mathf.InverseLerp(frictionSettings.SidecutEngageStart, frictionSettings.SidecutEngageFull, absEdge);
+            if (engage <= 0f)
+                return 0f;
+            float radius = Mathf.Max(frictionSettings.SidecutRadius * Mathf.Cos(absEdge * Mathf.Deg2Rad), 0.5f);
+            float along = corner.PlanePosition.y;
+            return Mathf.Sign(edge) * engage * (along / radius) * Mathf.Rad2Deg;
+        }
     }
 }

@@ -12,6 +12,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d436e11520aa2948b48919e9ed8273a, type: 3}
   m_Name: New Weight Control Config
   m_EditorClassIdentifier: Assembly-CSharp::TFR.Config.WeightControlConfig
-  InputRiseSpeed: 2.6
+  InputRiseSpeed: 1
   ReturnSpeed: 3.4
   MaximumOffset: 1
+  ReturnSpeedOverTime:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.5
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.09499785
+      value: 0.6582886
+      inSlope: 4.800001
+      outSlope: 4.800001
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.20833333
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6
+      value: 4
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
