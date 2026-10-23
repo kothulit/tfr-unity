@@ -10,16 +10,28 @@ namespace TFR.Player
     {
         // Цель меньше этого порога считается нейтралью: кнопку отпустили.
         const float NeutralThreshold = 0.001f;
+        /// <summary>Сколько секунд ось не удерживают.</summary>
+        float releasedTime;
         public float Value { get; private set; }
         /// <summary>
         /// Сдвигает Value к target на один кадр.
-        /// riseSpeed — пока направление удерживают, returnSpeed — пока ось возвращается к нулю.
+        /// riseSpeed — пока направление удерживают, returnSpeed — скорость возврата к нулю от времени после отпускания.
         /// </summary>
-        public float Tick(float target, float deltaTime, float riseSpeed, float returnSpeed)
+        public float Tick(float target, float deltaTime, float riseSpeed, AnimationCurve returnSpeed)
         {
             target = Mathf.Clamp(target, -1f, 1f);
-            var isHeld = Mathf.Abs(target) > NeutralThreshold;
-            var speed = isHeld ? riseSpeed : returnSpeed;
+            bool isHeld = Mathf.Abs(target) > NeutralThreshold;
+            float speed;
+            if (isHeld)
+            {
+                releasedTime = 0f;
+                speed = riseSpeed;
+            }
+            else
+            {
+                releasedTime += deltaTime;
+                speed = Mathf.Max(0f, returnSpeed.Evaluate(releasedTime));
+            }
             // За кадр Value проходит не больше speed * deltaTime и не перескакивает цель.
             Value = Mathf.MoveTowards(Value, target, speed * deltaTime);
             return Value;
@@ -30,6 +42,7 @@ namespace TFR.Player
         public void Reset()
         {
             Value = 0f;
+            releasedTime = 0f;
         }
     }
 }

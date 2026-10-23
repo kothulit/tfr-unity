@@ -12,7 +12,7 @@ namespace TFR.Config
         /// <summary>
         /// Скорость, с которой вес догоняет удержанное направление, в единицах в секунду.
         /// </summary>
-        public float InputRiseSpeed = 2.6f;
+        public float InputRiseSpeed = 1.0f;
         /// <summary>
         /// Скорость возврата к нулю, когда направление отпущено, в единицах в секунду.
         /// </summary>
@@ -21,5 +21,15 @@ namespace TFR.Config
         /// Наибольший сдвиг веса в одну сторону. Итоговое значение остаётся в диапазоне от -MaximumOffset до MaximumOffset.
         /// </summary>
         public float MaximumOffset = 1f;
+
+        /// <summary>
+        /// Скорость возврата к нулю после отпускания, в единицах в секунду.
+        /// По горизонтали — секунды с момента отпускания, по вертикали — скорость.
+        /// Медленное начало позволяет удерживать вес короткими нажатиями.
+        /// </summary>
+        public AnimationCurve ReturnSpeedOverTime = new(
+            new Keyframe(0f, 0.5f),
+            new Keyframe(0.3f, 1f),
+            new Keyframe(0.6f, 4f));
     }
 }

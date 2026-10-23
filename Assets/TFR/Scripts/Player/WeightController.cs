@@ -35,9 +35,9 @@ namespace TFR.Player
             float limit = config.MaximumOffset;
 
             NoseTail = noseTail.Tick(Mathf.Clamp(target.x, -limit, limit),
-                deltaTime, config.InputRiseSpeed, config.ReturnSpeed);
+                deltaTime, config.InputRiseSpeed, config.ReturnSpeedOverTime);
             ToeHeel = toeHeel.Tick(Mathf.Clamp(target.y, -limit, limit),
-                deltaTime, config.InputRiseSpeed, config.ReturnSpeed);
+                deltaTime, config.InputRiseSpeed, config.ReturnSpeedOverTime);
         }
 
         /// <summary>
